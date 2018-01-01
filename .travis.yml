@@ -1,0 +1,11 @@
+language: node_js
+node_js: node
+services:
+- mongodb
+deploy:
+  provider: heroku
+  api_key:
+    secure: zCcHlZKYZKHMFgpCAmLUz7XYJugZONbDMQboT4JWe3Y4SK3Yo80LMNKKj3EtL+9mCsl+fQp4VQUZ7E8YpY3jnHA0+N19fqBeQTPaL6JYeSC3VOHstNSaUcywUL2uAV6alWerusdLnbSdn1N5LSv9Bfpf5+uqfiJR5+LV7k+sqiLTUSttyueeqI//I270Wqwz5ND8T3rVP2s9cg44PDjjO01eP71pz7mB+MjOgz/+eUrhC9r/xEMrc3k/rNvneCIjxg65D2yzsiwFOeKZLLDKMs0aoyvaLgmIC6MfDKEOSbK+QdcTcdP8gVuUWx79KcmdRXZGBxKcKqqx0LDtZpU+q9IcdJ+/VNgh7gRRDcOGQ7zqabsCJqR859lykmtRt4etDmVNFC+0c6SAG3nxMng840IIhHaVx6iEumqpl6vaC9fYfyBWDURFe3X7xQAlcV332fHtQOi8xYNf290+H9n+3Ahg4jweE67BS7Xdtv4wTHke/gCF7tE0dVIncfLN7l4Spw5xfV93tCuYqEYV3PKoRpnGq2Mhqcsm896eBBqD/3Z10Z5DHu6CErIKG+JjLKYNKtjcWkml8wr/Z+ETpsYfcN2wM4or0Fy8mKfeP48/TitMuEjTifhyZOFgJraZpwKQCy0ezj2aRCAxaEuqdWDyc9bvu8h5fuFZbHbX9yqhNqE=
+  app: salty-falls-95504
+  on:
+    repo: euglevit/icode-api
