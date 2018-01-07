@@ -5,63 +5,68 @@ const mongoose = require('mongoose');
 const morgan = require('morgan');
 const passport = require('passport');
 const passportJWT = require("passport-jwt");
-// const cors = require('cors');
+const cors = require('cors');
 
-const {
-  DATABASE_URL,
-  PORT
-} = require('./config');
-const {
-  QuestionPost
-} = require('./models');
+const {DATABASE_URL, PORT, CLIENT_ORIGIN} = require('./config');
+const {QuestionPost} = require('./models');
+const {AnswerPost} = require('./models');
 const app = express();
-// const {
-//   router: usersRouter
-// } = require('./users');
-// const {
-//   router: authRouter,
-//   basicStrategy,
-//   jwtStrategy
-// } = require('./auth');
-// const {router: loginRouter} = require('./login');
+const {router: usersRouter} = require('./users');
+const {router: authRouter,basicStrategy,jwtStrategy} = require('./auth');
 
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(express.static('public'))
-// passport.use(basicStrategy);
-// app.use(cors);
+passport.use(basicStrategy);
+app.use(cors({origin: CLIENT_ORIGIN})
+);
 
-// app.use(function (req, res, next) {
-//   res.header('Access-Control-Allow-Origin', '*');
-//   res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-//   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE');
-//   if (req.method === 'OPTIONS') {
-//     return res.send(204);
-//   }
-//   next();
-// });
+app.use(function (req, res, next) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE');
+  if (req.method === 'OPTIONS') {
+    return res.send(204);
+  }
+  next();
+});
 
-// app.use(passport.initialize());
-// passport.use('local', basicStrategy);
+app.use(passport.initialize());
+passport.use('local', basicStrategy);
 
-// passport.use(jwtStrategy);
+passport.use(jwtStrategy);
 
-// app.use('/api/users/', usersRouter);
-// app.use('/api/auth/', authRouter);
+app.use('/api/users/', usersRouter);
+app.use('/api/auth/', authRouter);
 
 
 mongoose.Promise = global.Promise;
 
-// const jwtAuth = passport.authenticate('jwt', {
-//   session: false
-// });
+const jwtAuth = passport.authenticate('jwt', {
+  session: false
+});
 
+app.get('/', (req,res) => {
+  QuestionPost
+  .find()
+  .populate('comments')
+  .then(question => {
+    res.json(question);
+  })
+  .catch(err => {
+    console.error(err);
+    res.status(500).json({
+      error: 'something went terribly wrong'
+    });
+  });
+});
 
 app.get('/questions/:topic', (req, res) => {
   QuestionPost
     .find({
       topic : req.params.topic
     })
+    .populate('comments')
     .then(question => {
       res.json(question);
     })
@@ -72,23 +77,19 @@ app.get('/questions/:topic', (req, res) => {
       });
     });
 });
-
-// app.get('/goals/:userId/', (req, res) => {
-//   GoalPost
-//     .find({
-//       userId: req.params.userId
-//     })
-//     .then(posts => {
-//       res.json(posts.map(post => post.apiRepr()));
-//     })
-//     .catch(err => {
-//       console.error(err);
-//       res.status(500).json({
-//         error: 'something went horribly awry'
-//       });
-//     });
-// });
-
+app.get('/answers/', (req,res) => {
+  AnswerPost
+    .find()
+    .then(comment => {
+      res.json(comment);
+    })
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({
+        errpr: 'something went terribly terribly wrong'
+      });
+    });
+});
 
 app.post('/new', (req, res) => {
   console.log('postnew');
@@ -107,9 +108,11 @@ app.post('/new', (req, res) => {
       question: req.body.question,
       user: req.body.user,
       topic: req.body.topic,
-      // comments: []
     })
-    .then(questionPost => res.status(201).json(questionPost.apiRepr()))
+    .then(questionPost => {
+      console.log('res123',questionPost);
+      res.status(201).json(questionPost.apiRepr());
+    })
     .catch(err => {
       console.error(err);
       res.status(500).json({
@@ -117,6 +120,37 @@ app.post('/new', (req, res) => {
       });
     });
 
+});
+
+app.post('/answers/:id', (req, res) => {
+
+  AnswerPost
+    .create({
+      comment: req.body.comment,
+      user: req.body.user
+    })
+    .then(answer => {
+      console.log(typeof(answer._id));
+      QuestionPost
+      .findById(req.params.id)
+      .then(question => {
+        answer._id = [answer._id];
+        question.comments = question.comments.concat(answer._id);
+        question.save();
+      })
+      return answer;  
+    })
+    .then(item => {
+      console.log('yo',item);
+      res.status(200).json(item);
+    })
+    // .then(answerPost => res.status(201).json(answerPost.apiRepr()))
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({
+        error: 'Something went wrong'
+      });
+    });
 });
 
 // app.post('/goals/:id/shortTermGoals', (req, res) => {
@@ -176,9 +210,45 @@ app.post('/new', (req, res) => {
 //     });
 // });
 
+// app.delete('/answers/:id', (req, res) => {
+//   QuestionPost
+//     .findByIdAndRemove(req.params.id)
+//     .then(() => {
+//       res.status(204).json({
+//         message: 'success'
+//       });
+//     })
+//     .catch(err => {
+//       console.error(err);
+//       res.status(500).json({
+//         error: 'something went terribly wrong'
+//       });
+//     });
+// });
+
 app.delete('/answers/:id', (req, res) => {
-  QuestionPost
-    .findByIdAndRemove(req.params.id)
+  const requiredFields = ['id'];
+  for (let i = 0; i < requiredFields.length; i++) {
+    const field = requiredFields[i];
+    if (!(field in req.body)) {
+      const message = `Missing \`${field}\` in request body`
+      console.error(message);
+      return res.status(400).send(message);
+    }
+  }
+
+  AnswerPost
+    .findByIdAndRemove(req.body.id)
+    .then(answer => {
+      QuestionPost
+      .findById(req.params.id)
+      .then(question => {
+       let index = question.comments.indexOf(req.body.id)
+       question.comments.splice(index,1);
+       question.save();
+
+      })
+    })
     .then(() => {
       res.status(204).json({
         message: 'success'
@@ -215,6 +285,33 @@ app.put('/answers/:id', (req, res) => {
     .findByIdAndUpdate(req.params.id, {
       $set: {
         question : req.body.question
+      }
+    }, {
+      new: true
+    })
+    .then(updatedPost => res.status(204).end())
+    .catch(err => res.status(500).json({
+      message: 'Something went wrong'
+    }));
+});
+
+app.put('/answers/', (req, res) => {
+
+
+  const updated = {};
+  const updateableFields = ['comment'];
+  updateableFields.forEach(field => {
+    if (field in req.body) {
+      updated[field] = req.body[field];
+    }
+  });
+// 
+
+
+  AnswerPost
+    .findByIdAndUpdate(req.body.id, {
+      $set: {
+        comment : req.body.comment
       }
     }, {
       new: true

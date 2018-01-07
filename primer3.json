@@ -1,0 +1,22 @@
+[
+  {
+    "id": "123",
+    "user": "test3",
+    "comment": "javascript is a programming language"
+  },
+  {
+    "id": "234",
+    "user": "test4",
+    "comment": "I dont know what javascript is."
+  },
+  {
+    "id": "567",
+    "user": "test3",
+    "comment": "I dont know what a for loop is."
+  },
+  {
+    "id": "678",
+    "user": "test4",
+    "comment": "It is a loop."
+  }
+]
