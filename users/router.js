@@ -1,25 +1,26 @@
 'use strict';
 const express = require('express');
 const bodyParser = require('body-parser');
-const jwt = require('jsonwebtoken');
-const passport = require('passport');
-const config = require('../config');
 
 const {User} = require('./models');
 
 const router = express.Router();
-const createAuthToken = user => {
-  return jwt.sign({user}, config.JWT_SECRET, {
-      subject: user.username,
-      expiresIn: config.JWT_EXPIRY,
-      algorithm: 'HS256'
-  });
-};
 
-router.post('/', (req, res) => {
+const jsonParser = bodyParser.json();
+
+// Post to register a new user
+router.post('/', jsonParser, (req, res) => {
   const requiredFields = ['username', 'password'];
   const missingField = requiredFields.find(field => !(field in req.body));
 
+  if (missingField) {
+    return res.status(422).json({
+      code: 422,
+      reason: 'ValidationError',
+      message: 'Missing field',
+      location: missingField
+    });
+  }
 
   const stringFields = ['username', 'password', 'firstName', 'lastName'];
   const nonStringField = stringFields.find(
@@ -121,12 +122,7 @@ router.post('/', (req, res) => {
       });
     })
     .then(user => {
-      let apiRepr = user.apiRepr()
-      const authToken = createAuthToken(apiRepr);
-      res.json(Object.assign({}, {authToken}, apiRepr));
-  
-      // return res.status(201).json(user.apiRepr());
-      
+      return res.status(201).json(user.serialize());
     })
     .catch(err => {
       // Forward validation errors on to the client, otherwise give a 500
@@ -138,9 +134,13 @@ router.post('/', (req, res) => {
     });
 });
 
+// Never expose all your users like below in a prod application
+// we're just doing this so we have a quick way to see
+// if we're creating users. keep in mind, you can also
+// verify this in the Mongo shell.
 router.get('/', (req, res) => {
   return User.find()
-    .then(users => res.json(users.map(user => user.apiRepr())))
+    .then(users => res.json(users.map(user => user.serialize())))
     .catch(err => res.status(500).json({message: 'Internal server error'}));
 });
 

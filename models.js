@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 
 const answersSchema = mongoose.Schema({
 	user : String,
-	comment : {type: String, required: true}
+	comment : {type: String, required: true},
+	date : {type: Date, default: new Date()}
 })
 
 const questionSchema = new mongoose.Schema({
@@ -37,7 +38,8 @@ answersSchema.methods.apiRepr = function() {
 	return {
 		id : this._id,
 		user : this.user,
-		comment : this.comment
+		comment : this.comment,
+		date : this.date
 
 	}
 }
