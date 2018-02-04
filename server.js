@@ -17,8 +17,8 @@ const {router: authRouter,localStrategy,jwtStrategy} = require('./auth');
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(express.static('public'))
-app.use(cors({origin: CLIENT_ORIGIN})
-);
+// app.use(cors({origin: CLIENT_ORIGIN})
+// );
 
 app.use(function (req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
