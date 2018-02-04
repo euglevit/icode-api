@@ -14,11 +14,12 @@ const app = express();
 const {router: usersRouter} = require('./users');
 const {router: authRouter,localStrategy,jwtStrategy} = require('./auth');
 
+// app.options('*', cors());
+
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(express.static('public'))
-// app.use(cors({origin: CLIENT_ORIGIN})
-// );
+app.use(cors({origin: CLIENT_ORIGIN}));
 
 app.use(function (req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
